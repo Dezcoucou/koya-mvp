@@ -23,27 +23,55 @@ function genCode() {
   return `DEMANDE-KOYA-${dd}${mm}-${String(Math.floor(Math.random()*900)+100)}`;
 }
 
+function formatTel(tel) {
+  if (!tel || !tel.trim()) return "Non renseigné";
+  // Nettoyer — garder uniquement les chiffres
+  let digits = tel.replace(/\D/g, "");
+  // Si commence par 225 → déjà avec indicatif
+  if (digits.startsWith("225")) {
+    digits = digits.slice(3);
+  }
+  // Si commence par 00225
+  if (digits.startsWith("00225")) {
+    digits = digits.slice(5);
+  }
+  // On a maintenant les 10 chiffres locaux CI
+  // Format : +225 XX XX XX XX XX
+  if (digits.length === 10) {
+    return "+225 " + digits.slice(0,2) + " " + digits.slice(2,4) + " " + digits.slice(4,6) + " " + digits.slice(6,8) + " " + digits.slice(8,10);
+  }
+  // Si 8 chiffres (ancien format CI)
+  if (digits.length === 8) {
+    return "+225 " + digits.slice(0,2) + " " + digits.slice(2,4) + " " + digits.slice(4,6) + " " + digits.slice(6,8);
+  }
+  // Sinon retourner tel quel avec indicatif
+  return "+225 " + digits;
+}
+
 function buildWA(form, code, total) {
-  const urgent = form.urgent ? "⚠️ URGENT — Voyage aujourd'hui\n\n" : "";
-  const besoin = form.besoin ? `\n📌 Besoin particulier : ${form.besoin}` : "";
-  const msg = [
-    `${urgent}🚌 *Demande KOYA — ${code}*`,
-    ``,
-    `👤 Nom : ${form.name}`,
-    `📱 Téléphone : ${form.phone}`,
-    ``,
-    `🗺️ Trajet : ${form.from} → ${form.to}`,
-    `📅 Date : ${form.date}`,
-    `🕗 Heure souhaitée : ${form.hour}`,
-    `💺 Places : ${form.seats}`,
-    ``,
-    `💰 Montant estimé : ${total.toLocaleString()} FCFA`,
-    `📲 Opérateur préféré : ${form.operator}`,
+  const urgent = form.urgent ? "URGENT - Voyage aujourd'hui\n\n" : "";
+  const tel = "Tel : " + formatTel(form.phone);
+  const besoin = form.besoin ? `\nBesoin : ${form.besoin}` : "";
+  const lines = [
+    urgent + "Demande KOYA - " + code,
+    "",
+    "Nom : " + form.name,
+    tel,
+    "",
+    "Trajet : " + form.from + " -> " + form.to,
+    "Date : " + form.date,
+    "Heure : " + form.hour,
+    "Places : " + form.seats,
+    "",
+    "Montant estime : " + total.toLocaleString() + " FCFA",
+    "(ticket + 1 000 FCFA frais KOYA par place)",
+    "Operateur : " + form.operator,
     besoin,
-    ``,
-    `⏳ En attente de confirmation de disponibilité.`,
-  ].join("\n");
-  return `https://wa.me/${KOYA_WA}?text=${encodeURIComponent(msg)}`;
+    "",
+    "En attente de confirmation de disponibilite.",
+  ];
+  const msg = lines.join("\n");
+  return "https://wa.me/" + KOYA_WA + "?text=" + encodeURIComponent(msg);
 }
 
 const css = `
@@ -313,7 +341,7 @@ export default function KoyaMVP() {
     }
     if (step === 2) {
       if (!form.name.trim())                          return "Entre ton nom complet.";
-      if (!form.phone.trim() || form.phone.length < 8) return "Entre un numéro WhatsApp valide.";
+      // téléphone facultatif
     }
     if (step === 3) {
       if (!form.operator) return "Choisis ton opérateur Mobile Money.";
@@ -541,7 +569,7 @@ export default function KoyaMVP() {
                     onChange={e => set("name", e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Numéro WhatsApp <span>*</span></label>
+                  <label>Numéro WhatsApp <span style={{fontWeight:400,color:"var(--mid)"}}>(facultatif)</span></label>
                   <input placeholder="+225 07 00 00 00 00" value={form.phone}
                     onChange={e => set("phone", e.target.value)} />
                 </div>
@@ -715,7 +743,7 @@ export default function KoyaMVP() {
               </div>
               <div className="line-price">
                 {l.price.toLocaleString()} FCFA
-                <div className="line-price-sub">+ {KOYA_FEES} FCFA frais</div>
+                <div className="line-price-sub">+ {KOYA_FEES.toLocaleString()} FCFA frais KOYA</div>
               </div>
             </div>
           ))}
