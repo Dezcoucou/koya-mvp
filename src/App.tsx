@@ -15,7 +15,8 @@ const CITIES    = ["Abidjan","Bouaké","Yamoussoukro","San-Pédro","Man","Daloa"
 const HOURS     = ["06h00","06h30","07h00","08h00","09h00","10h00","12h00","13h00","14h00","15h00"];
 const OPERATORS = ["Orange Money","MTN Money","Wave","Moov Money"];
 const KOYA_FEES = 300;
-const KOYA_WA = "2250142299949"; // Numéro WhatsApp KOYA sans + ni espace
+const KOYA_WA     = "2250142299949"; // Numéro WhatsApp KOYA sans + ni espace
+const SCRIPT_URL  = "https://script.google.com/macros/s/AKfycbwP7rHj9U8dXlwZdTGfH15eyqknSKAjRL3Y0YgL5BlRqT3QgKDMxECQ4KSonyPSfQ1g/exec"; // Google Apps Script URL
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function genDemandeCode() {
@@ -273,7 +274,27 @@ export default function KoyaMVP() {
     setErr("");
     if (step === 3) {
       setBusy(true);
-      setTimeout(() => { setCode(genDemandeCode()); setStep(4); setBusy(false); }, 1400);
+      const demandeCode = genDemandeCode();
+      const now = new Date();
+      const payload = {
+        code:        demandeCode,
+        datedemande: now.toLocaleDateString("fr-FR"),
+        nom:         form.name,
+        telephone:   form.phone,
+        trajet:      form.from + " → " + form.to,
+        datevoyage:  form.date,
+        heure:       form.hour,
+        places:      form.seats,
+        montant:     total + " FCFA",
+        operateur:   form.operator,
+      };
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+      setTimeout(() => { setCode(demandeCode); setStep(4); setBusy(false); }, 1400);
     } else {
       setStep(s => s + 1);
     }
