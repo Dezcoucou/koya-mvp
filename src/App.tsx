@@ -13,7 +13,7 @@ const LINES = [
 const CITIES    = ["Abidjan","Bouaké","Yamoussoukro","San-Pédro","Man","Daloa"];
 const HOURS     = ["06h00","06h30","07h00","08h00","09h00","10h00","12h00","13h00","14h00","15h00"];
 const OPERATORS = ["Orange Money","MTN Money","Wave","Moov Money"];
-const KOYA_FEES = 300;
+const KOYA_FEES = 1000;
 const KOYA_WA   = "2250142299949";
 
 function genCode() {
