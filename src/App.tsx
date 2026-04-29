@@ -64,28 +64,30 @@ function buildWA(form, code, total) {
   return "https://wa.me/" + KOYA_WA + "?text=" + encodeURIComponent(lines.join("\n"));
 }
 
-async function saveToSheet(form, code, total) {
-  const params = new URLSearchParams();
+function saveToSheet(form, code, total) {
+  return new Promise((resolve) => {
+    const params = new URLSearchParams();
 
-  params.append("code", code);
-  params.append("name", form.name);
-  params.append("phone", formatTel(form.phone));
-  params.append("from", form.from);
-  params.append("to", form.to);
-  params.append("date", form.date);
-  params.append("hour", form.hour);
-  params.append("seats", form.seats);
-  params.append("total", String(total));
-  params.append("operator", form.operator);
-  params.append("pref", form.pref || "");
-  params.append("besoin", form.besoin || "");
-  params.append("urgent", form.urgent ? "OUI" : "NON");
+    params.append("code", code);
+    params.append("name", form.name);
+    params.append("phone", formatTel(form.phone));
+    params.append("from", form.from);
+    params.append("to", form.to);
+    params.append("date", form.date);
+    params.append("hour", form.hour);
+    params.append("seats", form.seats);
+    params.append("total", String(total));
+    params.append("operator", form.operator);
+    params.append("pref", form.pref || "");
+    params.append("besoin", form.besoin || "");
+    params.append("urgent", form.urgent ? "OUI" : "NON");
 
-  const url = `${SHEET_WEBHOOK_URL}?${params.toString()}`;
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(true);
+    img.src = `${SHEET_WEBHOOK_URL}?${params.toString()}`;
 
-  await fetch(url, {
-    method: "GET",
-    mode: "no-cors",
+    setTimeout(() => resolve(true), 800);
   });
 }
 
@@ -317,10 +319,14 @@ export default function KoyaMVP() {
 
   async function handleWhatsAppSubmit() {
     if (sendingSheet) return;
+  
     setSendingSheet(true);
+  
     await saveToSheet(form, code, total);
+  
     setSendingSheet(false);
-    window.open(buildWA(form, code, total), "_blank");
+  
+    window.location.href = buildWA(form, code, total);
   }
 
   const STEP_LABELS = ["Trajet","Mes infos","Paiement","Demande"];
