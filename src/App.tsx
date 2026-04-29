@@ -13,6 +13,7 @@ const LINES = [
 const CITIES    = ["Abidjan","Bouaké","Yamoussoukro","San-Pédro","Man","Daloa"];
 const HOURS     = ["06h00","06h30","07h00","08h00","09h00","10h00","12h00","13h00","14h00","15h00"];
 const OPERATORS = ["Orange Money","MTN Money","Wave","Moov Money"];
+const PREFS     = ["Rapide","Confort","Économique"];
 const KOYA_FEES = 1000;
 const KOYA_WA   = "2250142299949";
 
@@ -25,26 +26,11 @@ function genCode() {
 
 function formatTel(tel) {
   if (!tel || !tel.trim()) return "Non renseigné";
-  // Nettoyer — garder uniquement les chiffres
   let digits = tel.replace(/\D/g, "");
-  // Si commence par 225 → déjà avec indicatif
-  if (digits.startsWith("225")) {
-    digits = digits.slice(3);
-  }
-  // Si commence par 00225
-  if (digits.startsWith("00225")) {
-    digits = digits.slice(5);
-  }
-  // On a maintenant les 10 chiffres locaux CI
-  // Format : +225 XX XX XX XX XX
-  if (digits.length === 10) {
-    return "+225 " + digits.slice(0,2) + " " + digits.slice(2,4) + " " + digits.slice(4,6) + " " + digits.slice(6,8) + " " + digits.slice(8,10);
-  }
-  // Si 8 chiffres (ancien format CI)
-  if (digits.length === 8) {
-    return "+225 " + digits.slice(0,2) + " " + digits.slice(2,4) + " " + digits.slice(4,6) + " " + digits.slice(6,8);
-  }
-  // Sinon retourner tel quel avec indicatif
+  if (digits.startsWith("225")) digits = digits.slice(3);
+  if (digits.startsWith("00225")) digits = digits.slice(5);
+  if (digits.length === 10) return "+225 " + digits.slice(0,2) + " " + digits.slice(2,4) + " " + digits.slice(4,6) + " " + digits.slice(6,8) + " " + digits.slice(8,10);
+  if (digits.length === 8)  return "+225 " + digits.slice(0,2) + " " + digits.slice(2,4) + " " + digits.slice(4,6) + " " + digits.slice(6,8);
   return "+225 " + digits;
 }
 
@@ -52,6 +38,7 @@ function buildWA(form, code, total) {
   const urgent = form.urgent ? "URGENT - Voyage aujourd'hui\n\n" : "";
   const tel = "Tel : " + formatTel(form.phone);
   const besoin = form.besoin ? `\nBesoin : ${form.besoin}` : "";
+  const pref = form.pref ? `\nPréférence : ${form.pref}` : "";
   const lines = [
     urgent + "Demande KOYA - " + code,
     "",
@@ -64,14 +51,14 @@ function buildWA(form, code, total) {
     "Places : " + form.seats,
     "",
     "Montant estime : " + total.toLocaleString() + " FCFA",
-    "(ticket + 1 000 FCFA frais KOYA par place)",
+    "(ticket + 1 000 FCFA service de réservation par place)",
     "Operateur : " + form.operator,
     besoin,
+    pref,
     "",
     "En attente de confirmation de disponibilite.",
   ];
-  const msg = lines.join("\n");
-  return "https://wa.me/" + KOYA_WA + "?text=" + encodeURIComponent(msg);
+  return "https://wa.me/" + KOYA_WA + "?text=" + encodeURIComponent(lines.join("\n"));
 }
 
 const css = `
@@ -111,6 +98,45 @@ body{font-family:'DM Sans',sans-serif;background:var(--lite);color:var(--dk);min
 .hero-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:10px}
 .chip{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);color:#fff;
   font-size:12px;padding:5px 12px;border-radius:20px;display:flex;align-items:center;gap:5px}
+.hero-cta{display:inline-block;margin-top:20px;background:var(--o);color:#fff;
+  font-family:'Syne',sans-serif;font-size:16px;font-weight:700;padding:14px 32px;
+  border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(224,123,0,.35);
+  transition:all .2s}
+.hero-cta:hover{background:#C96F00;transform:translateY(-1px)}
+
+/* CONFIANCE BAND */
+.confiance-band{background:var(--w);border-bottom:1px solid var(--bd);padding:18px 16px}
+.confiance-inner{max-width:680px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.conf-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--dk)}
+.conf-check{width:22px;height:22px;border-radius:50%;background:var(--g);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+
+/* HOW IT WORKS */
+.how-section{background:var(--lite);padding:32px 16px}
+.how-inner{max-width:680px;margin:0 auto}
+.how-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--dk);
+  text-align:center;margin-bottom:24px}
+.how-steps{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.how-step{background:var(--w);border:1.5px solid var(--bd);border-radius:14px;
+  padding:16px 14px;position:relative}
+.how-num{width:36px;height:36px;border-radius:50%;background:var(--g);color:#fff;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:15px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.how-step-title{font-size:13px;font-weight:700;color:var(--dk);margin-bottom:4px;line-height:1.3}
+.how-step-desc{font-size:12px;color:var(--mid);line-height:1.4}
+
+/* POSITIONING */
+.positioning-band{background:var(--lg);border-top:1.5px solid var(--bd);border-bottom:1.5px solid var(--bd);
+  padding:20px 16px;text-align:center}
+.positioning-text{max-width:600px;margin:0 auto;font-size:14px;color:var(--dk);line-height:1.7;font-weight:500}
+
+/* PRICE BAND */
+.price-band{background:var(--w);padding:20px 16px;border-bottom:1px solid var(--bd)}
+.price-band-inner{max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  background:var(--lo);border:1.5px solid rgba(224,123,0,.25);border-radius:14px;padding:16px 20px}
+.price-band-left{font-size:14px;color:var(--dk);line-height:1.6}
+.price-band-left strong{display:block;font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--o);margin-bottom:2px}
+.price-band-right{font-size:12px;color:var(--mid);text-align:right;max-width:160px;line-height:1.5}
 
 /* PROOF SOCIALE */
 .proof-bar{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
@@ -119,20 +145,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--lite);color:var(--dk);min
 .proof-dot{width:8px;height:8px;border-radius:50%;background:#4ADE80;flex-shrink:0;
   animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-/* HOW IT WORKS */
-.how-section{background:var(--w);border-bottom:1px solid var(--bd);padding:28px 16px}
-.how-inner{max-width:680px;margin:0 auto}
-.how-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--g);
-  text-align:center;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px}
-.how-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.how-step{background:var(--lg);border:1.5px solid var(--bd);border-radius:14px;
-  padding:16px 12px;text-align:center}
-.how-num{width:32px;height:32px;border-radius:50%;background:var(--g);color:#fff;
-  font-family:'Syne',sans-serif;font-weight:800;font-size:14px;
-  display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
-.how-step-title{font-size:12px;font-weight:700;color:var(--dk);margin-bottom:6px;line-height:1.3}
-.how-step-desc{font-size:11px;color:var(--mid);line-height:1.4}
 
 /* HUMAN BLOC */
 .human-bar{background:var(--lo);border-left:4px solid var(--o);border-radius:10px;
@@ -184,6 +196,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--lite);color:var(--dk);min
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(26,92,56,.10)}
 .field input::placeholder,.field textarea::placeholder{color:#9BAAA0}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* PREF GRID */
+.pref-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.pref-opt{border:1.5px solid var(--bd);border-radius:10px;padding:10px 8px;
+  cursor:pointer;transition:all .2s;text-align:center;font-size:12px;font-weight:600;color:var(--mid)}
+.pref-opt.sel{border-color:var(--g);background:var(--lg);color:var(--g)}
 
 /* URGENT TOGGLE */
 .urgent-toggle{display:flex;align-items:center;gap:12px;background:var(--lr);
@@ -246,6 +264,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--lite);color:var(--dk);min
 .wa-mandatory{font-size:12px;color:var(--r);font-weight:600;text-align:center;
   margin-top:8px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:5px}
 
+/* CTA FINAL */
+.cta-final{max-width:680px;margin:0 auto 40px;padding:0 16px}
+.cta-final-btn{width:100%;height:60px;background:var(--g);color:#fff;border:none;
+  border-radius:14px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 6px 20px rgba(26,92,56,.30);transition:all .2s}
+.cta-final-btn:hover{background:var(--g2);transform:translateY(-1px)}
+
 /* SUCCESS */
 .success-wrap{padding:32px 24px;text-align:center}
 .success-icon{width:76px;height:76px;background:var(--lg);border-radius:50%;
@@ -306,22 +332,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--lite);color:var(--dk);min
 @media(max-width:480px){
   .row{grid-template-columns:1fr}
   .payment-grid{grid-template-columns:1fr}
+  .pref-grid{grid-template-columns:repeat(3,1fr)}
   .card-body{padding:18px}
   .how-steps{grid-template-columns:1fr}
+  .confiance-inner{grid-template-columns:1fr}
   .hero{padding:36px 16px 32px}
   .step{font-size:9px;padding:7px 3px}
 }
 `;
 
 export default function KoyaMVP() {
-  const [step, setStep]   = useState(1);
-  const [form, setForm]   = useState({
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
     from:"",to:"",date:"",hour:"",seats:"1",
-    name:"",phone:"",operator:"",besoin:"",urgent:false
+    name:"",phone:"",operator:"",besoin:"",pref:"",urgent:false
   });
-  const [err,  setErr]    = useState("");
-  const [code, setCode]   = useState("");
-  const [busy, setBusy]   = useState(false);
+  const [err,  setErr]  = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const line  = LINES.find(l => l.from === form.from && l.to === form.to);
   const seats = parseInt(form.seats) || 1;
@@ -340,8 +368,7 @@ export default function KoyaMVP() {
       if (!form.hour)            return "Choisis une heure souhaitée.";
     }
     if (step === 2) {
-      if (!form.name.trim())                          return "Entre ton nom complet.";
-      // téléphone facultatif
+      if (!form.name.trim()) return "Entre ton nom complet.";
     }
     if (step === 3) {
       if (!form.operator) return "Choisis ton opérateur Mobile Money.";
@@ -363,7 +390,7 @@ export default function KoyaMVP() {
 
   function reset() {
     setStep(1);
-    setForm({from:"",to:"",date:"",hour:"",seats:"1",name:"",phone:"",operator:"",besoin:"",urgent:false});
+    setForm({from:"",to:"",date:"",hour:"",seats:"1",name:"",phone:"",operator:"",besoin:"",pref:"",urgent:false});
     setCode(""); setErr("");
   }
 
@@ -372,7 +399,11 @@ export default function KoyaMVP() {
     setTimeout(() => document.getElementById("form-anchor")?.scrollIntoView({behavior:"smooth"}), 80);
   }
 
-  const STEP_LABELS = ["Trajet","Mes infos","Opérateur","Demande"];
+  function scrollToForm() {
+    document.getElementById("form-anchor")?.scrollIntoView({behavior:"smooth"});
+  }
+
+  const STEP_LABELS = ["Trajet","Mes infos","Paiement","Demande"];
 
   return (
     <>
@@ -386,44 +417,81 @@ export default function KoyaMVP() {
 
       {/* HERO */}
       <div className="hero">
-        <div className="hero-tag">✈ Voyage sans stress</div>
-        <h1>Réserve ton car<br/>depuis ton <em>téléphone</em></h1>
+        <div className="hero-tag">🚌 Service de réservation</div>
+        <h1>Réserve ta place<br/>sans te <em>déplacer</em></h1>
         <p className="hero-sub">
-          Envoie ta demande en 2 minutes. Un opérateur KOYA vérifie
-          la disponibilité réelle. Tu paies seulement après confirmation.
+          On s'occupe de trouver ta place et de la sécuriser pour toi.
         </p>
         <div className="hero-chips">
-          <div className="chip">✅ Paiement après confirmation</div>
-          <div className="chip">💸 MTN · Orange · Wave</div>
-          <div className="chip">⚡ Réponse rapide sur WhatsApp pendant les horaires d'ouverture</div>
-          <div className="chip">👤 Opérateur humain</div>
+          <div className="chip">✅ Place garantie</div>
+          <div className="chip">✅ Départ confirmé</div>
+          <div className="chip">✅ Compagnie sélectionnée pour toi</div>
+          <div className="chip">✅ Assistance jusqu'au départ</div>
         </div>
-        <div className="proof-bar">
+        <button className="hero-cta" onClick={scrollToForm}>
+          Réserver ma place
+        </button>
+        <div className="proof-bar" style={{marginTop:20}}>
           <div className="proof-dot"></div>
           Phase test · Premiers trajets suivis sur Abidjan ↔ Bouaké
         </div>
       </div>
 
-      {/* COMMENT KOYA SÉCURISE */}
+      {/* CONFIANCE BAND */}
+      <div className="confiance-band">
+        <div className="confiance-inner">
+          {[
+            "Place garantie",
+            "Départ confirmé",
+            "Compagnie fiable sélectionnée automatiquement",
+            "Assistance KOYA jusqu'au départ",
+          ].map((item, i) => (
+            <div key={i} className="conf-item">
+              <div className="conf-check">✓</div>
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* COMMENT ÇA MARCHE */}
       <div className="how-section">
         <div className="how-inner">
-          <div className="how-title">🔒 Comment KOYA sécurise ta place</div>
+          <div className="how-title">Comment ça marche ?</div>
           <div className="how-steps">
-            <div className="how-step">
-              <div className="how-num">1</div>
-              <div className="how-step-title">KOYA contacte un vendeur partenaire</div>
-              <div className="how-step-desc">Un opérateur appelle directement le guichet de la compagnie</div>
-            </div>
-            <div className="how-step">
-              <div className="how-num">2</div>
-              <div className="how-step-title">KOYA attend une preuve de disponibilité</div>
-              <div className="how-step-desc">Photo du cahier ou message du vendeur — aucune confirmation sans preuve</div>
-            </div>
-            <div className="how-step">
-              <div className="how-num">3</div>
-              <div className="how-step-title">Tu paies seulement après confirmation</div>
-              <div className="how-step-desc">Zéro argent échangé avant que ta place soit réellement disponible</div>
-            </div>
+            {[
+              { n:"1", t:"Tu fais ta demande", d:"Remplis le formulaire en 2 minutes depuis ton téléphone" },
+              { n:"2", t:"KOYA trouve et bloque ta place", d:"Un opérateur contacte une compagnie fiable et sécurise ta place" },
+              { n:"3", t:"Tu paies une fois confirmé", d:"Zéro paiement avant confirmation — ton argent reste chez toi" },
+              { n:"4", t:"Tu voyages sans stress", d:"Tu arrives en gare, ta place t'attend. C'est tout." },
+            ].map((s, i) => (
+              <div key={i} className="how-step">
+                <div className="how-num">{s.n}</div>
+                <div className="how-step-title">{s.t}</div>
+                <div className="how-step-desc">{s.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* POSITIONNEMENT */}
+      <div className="positioning-band">
+        <p className="positioning-text">
+        Nous sélectionnons pour toi une compagnie fiable avec places disponibles.
+        Le nom de la compagnie et les informations utiles du voyage te sont communiqués après confirmation.
+        </p>
+      </div>
+
+      {/* PRIX */}
+      <div className="price-band">
+        <div className="price-band-inner">
+          <div className="price-band-left">
+            <strong>Service de réservation : 1 000 FCFA / place</strong>
+            Prix du ticket selon la destination
+          </div>
+          <div className="price-band-right">
+            Tu paies uniquement une fois ta place confirmée.
           </div>
         </div>
       </div>
@@ -488,20 +556,17 @@ export default function KoyaMVP() {
               <>
                 <div className="notice blue">
                   <span className="notice-icon">ℹ️</span>
-                  <div>Tu envoies une <strong>demande</strong>. KOYA vérifie la disponibilité réelle
-                  avant toute confirmation. Si confirmée — ta place est garantie ou remboursée.</div>
+                  <div>Tu envoies une <strong>demande</strong>. KOYA sélectionne une compagnie fiable et vérifie la disponibilité. Si confirmée — ta place est garantie ou remboursée.</div>
                 </div>
 
-                {/* URGENT */}
-                <div
-                  className={`urgent-toggle ${form.urgent?"active":""}`}
+                <div className={`urgent-toggle ${form.urgent?"active":""}`}
                   onClick={() => set("urgent", !form.urgent)}>
                   <div className="urgent-cb">
                     {form.urgent && <span style={{color:"#fff",fontSize:13,fontWeight:800}}>✓</span>}
                   </div>
                   <div>
                     <div className="urgent-label">🚨 Je voyage aujourd'hui</div>
-                    <div className="urgent-sub">Ta demande sera marquée URGENTE sur WhatsApp · Sous réserve de disponibilité immédiate.</div>
+                    <div className="urgent-sub">Ta demande sera marquée URGENTE · Sous réserve de disponibilité immédiate.</div>
                   </div>
                 </div>
 
@@ -524,9 +589,7 @@ export default function KoyaMVP() {
 
                 {line && (
                   <div className="price-box">
-                    <div className="price-left">
-                      🚌 {line.from} → {line.to}<br/>⏱ {line.duration}
-                    </div>
+                    <div className="price-left">🚌 {line.from} → {line.to}<br/>⏱ {line.duration}</div>
                     <div className="price-right">
                       <div style={{fontSize:11,color:"var(--mid)"}}>Prix indicatif</div>
                       <div className="price-total">{line.price.toLocaleString()} FCFA</div>
@@ -556,6 +619,18 @@ export default function KoyaMVP() {
                   </select>
                 </div>
 
+                <div className="field">
+                  <label>Préférence <span style={{fontWeight:400,color:"var(--mid)"}}>(optionnel)</span></label>
+                  <div className="pref-grid">
+                    {PREFS.map(p => (
+                      <div key={p} className={`pref-opt ${form.pref===p?"sel":""}`}
+                        onClick={() => set("pref", form.pref===p?"":p)}>
+                        {p}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <button className="btn btn-g" onClick={next}>Continuer →</button>
               </>
             )}
@@ -576,7 +651,7 @@ export default function KoyaMVP() {
                 <div className="field">
                   <label>Besoin particulier <span style={{fontWeight:400,color:"var(--mid)"}}>(facultatif)</span></label>
                   <textarea
-                    placeholder="Ex : bagages volumineux, voyage avec enfant, personne âgée, départ urgent..."
+                    placeholder="Ex : bagages volumineux, voyage avec enfant, personne âgée..."
                     value={form.besoin}
                     onChange={e => set("besoin", e.target.value)} />
                 </div>
@@ -587,7 +662,7 @@ export default function KoyaMVP() {
                       🚌 {form.from} → {form.to}<br/>
                       📅 {form.date} · {form.hour}<br/>
                       💺 {form.seats} place{seats>1?"s":""}
-                      {form.urgent && <><br/><span style={{color:"var(--r)",fontWeight:700}}>⚠️ URGENT — Voyage aujourd'hui</span></>}
+                      {form.urgent && <><br/><span style={{color:"var(--r)",fontWeight:700}}>⚠️ URGENT</span></>}
                     </div>
                     <div className="price-right">
                       <div style={{fontSize:11,color:"var(--mid)"}}>Montant estimé</div>
@@ -599,7 +674,7 @@ export default function KoyaMVP() {
 
                 <div className="notice orange">
                   <span className="notice-icon">💳</span>
-                  <div>Le paiement se fait <strong>uniquement après confirmation</strong> de disponibilité par KOYA sur WhatsApp. Tu ne paies rien maintenant.</div>
+                  <div>Le paiement se fait <strong>uniquement après confirmation</strong> par KOYA sur WhatsApp. Tu ne paies rien maintenant.</div>
                 </div>
 
                 <button className="btn btn-sec" onClick={() => { setStep(1); setErr(""); }}>← Retour</button>
@@ -615,8 +690,8 @@ export default function KoyaMVP() {
                   <div className="payment-info-body">
                     1. Tu prépares ta demande maintenant<br/>
                     2. Tu l'envoies sur WhatsApp KOYA<br/>
-                    3. Un opérateur vérifie la disponibilité réelle<br/>
-                    4. Tu reçois la <strong>confirmation WhatsApp</strong> rapidement pendant les horaires d'ouverture<br/>
+                    3. KOYA sélectionne une compagnie fiable et vérifie la place<br/>
+                    4. Tu reçois la <strong>confirmation WhatsApp</strong> rapidement<br/>
                     5. <strong>Seulement après confirmation</strong> → tu envoies le paiement<br/>
                     6. Tu reçois ton code de voyage définitif
                   </div>
@@ -657,7 +732,7 @@ export default function KoyaMVP() {
               </>
             )}
 
-            {/* STEP 4 — SUCCÈS */}
+            {/* STEP 4 */}
             {step === 4 && (
               <div className="success-wrap">
                 <div className="success-icon">📨</div>
@@ -693,7 +768,7 @@ export default function KoyaMVP() {
                   <div className="val-step">
                     <div className="val-num vs-wait">⏳</div>
                     <div className="val-text">
-                      <strong>Opérateur KOYA vérifie auprès du vendeur</strong>
+                      <strong>KOYA sélectionne une compagnie et vérifie ta place</strong>
                       <span>Preuve de disponibilité obligatoire avant confirmation</span>
                     </div>
                   </div>
@@ -708,8 +783,7 @@ export default function KoyaMVP() {
 
                 <div className="notice orange" style={{marginBottom:14}}>
                   <span className="notice-icon">ℹ️</span>
-                  <div>Si ta place est <strong>confirmée par KOYA</strong>, elle est garantie
-                  ou remboursée. Zéro paiement avant cette étape.</div>
+                  <div>Si ta place est <strong>confirmée par KOYA</strong>, elle est garantie ou remboursée. Zéro paiement avant cette étape.</div>
                 </div>
 
                 <a href={buildWA(form, code, total)} target="_blank" rel="noopener noreferrer"
@@ -748,6 +822,13 @@ export default function KoyaMVP() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* CTA FINAL */}
+      <div className="cta-final">
+        <button className="cta-final-btn" onClick={scrollToForm}>
+          🚌 Réserver ma place maintenant
+        </button>
       </div>
 
       {/* FOOTER */}
