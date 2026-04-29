@@ -65,26 +65,25 @@ function buildWA(form, code, total) {
 }
 
 async function saveToSheet(form, code, total) {
-  const data = new URLSearchParams();
+  const params = new URLSearchParams({
+    code,
+    name: form.name,
+    phone: formatTel(form.phone),
+    from: form.from,
+    to: form.to,
+    date: form.date,
+    hour: form.hour,
+    seats: form.seats,
+    total: String(total),
+    operator: form.operator,
+    pref: form.pref || "",
+    besoin: form.besoin || "",
+    urgent: form.urgent ? "OUI" : "NON",
+  });
 
-  data.append("code", code);
-  data.append("name", form.name);
-  data.append("phone", formatTel(form.phone));
-  data.append("from", form.from);
-  data.append("to", form.to);
-  data.append("date", form.date);
-  data.append("hour", form.hour);
-  data.append("seats", form.seats);
-  data.append("total", String(total));
-  data.append("operator", form.operator);
-  data.append("pref", form.pref || "");
-  data.append("besoin", form.besoin || "");
-  data.append("urgent", form.urgent ? "OUI" : "NON");
-
-  await fetch(SHEET_WEBHOOK_URL, {
-    method: "POST",
+  await fetch(`${SHEET_WEBHOOK_URL}?${params.toString()}`, {
+    method: "GET",
     mode: "no-cors",
-    body: data,
   });
 }
 
