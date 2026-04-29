@@ -18,7 +18,7 @@ const PREFS     = ["Rapide","Confort","Économique"];
 const KOYA_FEES = 1000;
 const KOYA_WA   = "2250142299949";
 
-const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxO_Ui1AqBVsTvGGP47bnkouTbRaEu68rocifJSjTpY/exec";
+const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyQSV41nhrZVKcH53SKkfRh7zK8RA8PPDxKBy-zoO1OprkvhPv329z9cA9OT-r6b3GX8g/exec";
 
 function genCode() {
   const now = new Date();
@@ -65,23 +65,25 @@ function buildWA(form, code, total) {
 }
 
 async function saveToSheet(form, code, total) {
-  const params = new URLSearchParams({
-    code,
-    name: form.name,
-    phone: formatTel(form.phone),
-    from: form.from,
-    to: form.to,
-    date: form.date,
-    hour: form.hour,
-    seats: form.seats,
-    total: String(total),
-    operator: form.operator,
-    pref: form.pref || "",
-    besoin: form.besoin || "",
-    urgent: form.urgent ? "OUI" : "NON",
-  });
+  const params = new URLSearchParams();
 
-  await fetch(`${SHEET_WEBHOOK_URL}?${params.toString()}`, {
+  params.append("code", code);
+  params.append("name", form.name);
+  params.append("phone", formatTel(form.phone));
+  params.append("from", form.from);
+  params.append("to", form.to);
+  params.append("date", form.date);
+  params.append("hour", form.hour);
+  params.append("seats", form.seats);
+  params.append("total", String(total));
+  params.append("operator", form.operator);
+  params.append("pref", form.pref || "");
+  params.append("besoin", form.besoin || "");
+  params.append("urgent", form.urgent ? "OUI" : "NON");
+
+  const url = `${SHEET_WEBHOOK_URL}?${params.toString()}`;
+
+  await fetch(url, {
     method: "GET",
     mode: "no-cors",
   });
