@@ -65,32 +65,27 @@ function buildWA(form, code, total) {
 }
 
 async function saveToSheet(form, code, total) {
-  try {
-    await fetch(SHEET_WEBHOOK_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        code,
-        name: form.name,
-        phone: formatTel(form.phone),
-        from: form.from,
-        to: form.to,
-        date: form.date,
-        hour: form.hour,
-        seats: form.seats,
-        total,
-        operator: form.operator,
-        pref: form.pref,
-        besoin: form.besoin,
-        urgent: form.urgent,
-      }),
-    });
-  } catch (error) {
-    console.error("Erreur Google Sheet", error);
-  }
+  const data = new URLSearchParams();
+
+  data.append("code", code);
+  data.append("name", form.name);
+  data.append("phone", formatTel(form.phone));
+  data.append("from", form.from);
+  data.append("to", form.to);
+  data.append("date", form.date);
+  data.append("hour", form.hour);
+  data.append("seats", form.seats);
+  data.append("total", String(total));
+  data.append("operator", form.operator);
+  data.append("pref", form.pref || "");
+  data.append("besoin", form.besoin || "");
+  data.append("urgent", form.urgent ? "OUI" : "NON");
+
+  await fetch(SHEET_WEBHOOK_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: data,
+  });
 }
 
 const css = `
