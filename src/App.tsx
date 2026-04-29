@@ -18,7 +18,7 @@ const PREFS     = ["Rapide","Confort","Économique"];
 const KOYA_FEES = 1000;
 const KOYA_WA   = "2250142299949";
 
-const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyQSV41nhrZVKcH53SKkfRh7zK8RA8PPDxKBy-zoO1OprkvhPv329z9cA9OT-r6b3GX8g/exec";
+const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxbepaP2hrm7zOlbJcWnAdJzKT4wICASUs4sj5x8orc5iNcQTmmNB11eiBby2w4-_QV3g/exec";
 
 function genCode() {
   const now = new Date();
@@ -64,31 +64,24 @@ function buildWA(form, code, total) {
   return "https://wa.me/" + KOYA_WA + "?text=" + encodeURIComponent(lines.join("\n"));
 }
 
-function saveToSheet(form, code, total) {
-  return new Promise((resolve) => {
-    const params = new URLSearchParams();
+function buildSheetRedirectUrl(form, code, total) {
+  const params = new URLSearchParams();
 
-    params.append("code", code);
-    params.append("name", form.name);
-    params.append("phone", formatTel(form.phone));
-    params.append("from", form.from);
-    params.append("to", form.to);
-    params.append("date", form.date);
-    params.append("hour", form.hour);
-    params.append("seats", form.seats);
-    params.append("total", String(total));
-    params.append("operator", form.operator);
-    params.append("pref", form.pref || "");
-    params.append("besoin", form.besoin || "");
-    params.append("urgent", form.urgent ? "OUI" : "NON");
+  params.append("code", code);
+  params.append("name", form.name);
+  params.append("phone", formatTel(form.phone));
+  params.append("from", form.from);
+  params.append("to", form.to);
+  params.append("date", form.date);
+  params.append("hour", form.hour);
+  params.append("seats", form.seats);
+  params.append("total", String(total));
+  params.append("operator", form.operator);
+  params.append("pref", form.pref || "");
+  params.append("besoin", form.besoin || "");
+  params.append("urgent", form.urgent ? "OUI" : "NON");
 
-    const img = new Image();
-    img.onload = () => resolve(true);
-    img.onerror = () => resolve(true);
-    img.src = `${SHEET_WEBHOOK_URL}?${params.toString()}`;
-
-    setTimeout(() => resolve(true), 800);
-  });
+  return `${SHEET_WEBHOOK_URL}?${params.toString()}`;
 }
 
 const css = `
