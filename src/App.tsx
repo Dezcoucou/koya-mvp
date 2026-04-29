@@ -10,12 +10,15 @@ const LINES = [
   { from: "Bouaké",  to: "Abidjan",      price: 5000, duration: "4h30" },
   { from: "Yamoussoukro", to: "Abidjan", price: 3500, duration: "2h30" },
 ];
+
 const CITIES    = ["Abidjan","Bouaké","Yamoussoukro","San-Pédro","Man","Daloa"];
 const HOURS     = ["06h00","06h30","07h00","08h00","09h00","10h00","12h00","13h00","14h00","15h00"];
 const OPERATORS = ["Orange Money","MTN Money","Wave","Moov Money"];
 const PREFS     = ["Rapide","Confort","Économique"];
 const KOYA_FEES = 1000;
 const KOYA_WA   = "2250142299949";
+
+const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxO_Ui1AqBVsTvGGP47bnkouTbRaEu68rocifJSjTpY/exec";
 
 function genCode() {
   const now = new Date();
@@ -61,6 +64,35 @@ function buildWA(form, code, total) {
   return "https://wa.me/" + KOYA_WA + "?text=" + encodeURIComponent(lines.join("\n"));
 }
 
+async function saveToSheet(form, code, total) {
+  try {
+    await fetch(SHEET_WEBHOOK_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code,
+        name: form.name,
+        phone: formatTel(form.phone),
+        from: form.from,
+        to: form.to,
+        date: form.date,
+        hour: form.hour,
+        seats: form.seats,
+        total,
+        operator: form.operator,
+        pref: form.pref,
+        besoin: form.besoin,
+        urgent: form.urgent,
+      }),
+    });
+  } catch (error) {
+    console.error("Erreur Google Sheet", error);
+  }
+}
+
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -74,261 +106,144 @@ const css = `
   --sh2:0 2px 8px rgba(26,92,56,.08);
 }
 body{font-family:'DM Sans',sans-serif;background:var(--lite);color:var(--dk);min-height:100vh}
-
-/* NAV */
-.nav{background:var(--g);padding:0 24px;height:64px;display:flex;align-items:center;
-  justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+.nav{background:var(--g);padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.18)}
 .logo{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#fff;letter-spacing:2px}
 .logo span{color:var(--o)}
-.badge{background:rgba(255,255,255,.15);color:#fff;font-size:12px;font-weight:500;
-  padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.25)}
-
-/* HERO */
-.hero{background:linear-gradient(135deg,var(--g) 0%,#0D3D24 100%);
-  padding:52px 24px 44px;text-align:center;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;inset:0;opacity:.4;
-  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E")}
-.hero-tag{display:inline-block;background:rgba(224,123,0,.2);border:1px solid rgba(224,123,0,.4);
-  color:var(--o);font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
-  padding:5px 14px;border-radius:20px;margin-bottom:20px}
-.hero h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,42px);font-weight:800;
-  color:#fff;line-height:1.15;margin-bottom:14px}
+.badge{background:rgba(255,255,255,.15);color:#fff;font-size:12px;font-weight:500;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.25)}
+.hero{background:linear-gradient(135deg,var(--g) 0%,#0D3D24 100%);padding:52px 24px 44px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;opacity:.4;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E")}
+.hero-tag{display:inline-block;background:rgba(224,123,0,.2);border:1px solid rgba(224,123,0,.4);color:var(--o);font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:20px}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,42px);font-weight:800;color:#fff;line-height:1.15;margin-bottom:14px}
 .hero h1 em{font-style:normal;color:var(--o)}
 .hero-sub{color:rgba(255,255,255,.75);font-size:15px;max-width:500px;margin:0 auto 24px;line-height:1.6}
 .hero-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:10px}
-.chip{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);color:#fff;
-  font-size:12px;padding:5px 12px;border-radius:20px;display:flex;align-items:center;gap:5px}
-.hero-cta{display:inline-block;margin-top:20px;background:var(--o);color:#fff;
-  font-family:'Syne',sans-serif;font-size:16px;font-weight:700;padding:14px 32px;
-  border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(224,123,0,.35);
-  transition:all .2s}
+.chip{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);color:#fff;font-size:12px;padding:5px 12px;border-radius:20px;display:flex;align-items:center;gap:5px}
+.hero-cta{display:inline-block;margin-top:20px;background:var(--o);color:#fff;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;padding:14px 32px;border-radius:12px;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(224,123,0,.35);transition:all .2s}
 .hero-cta:hover{background:#C96F00;transform:translateY(-1px)}
-
-/* CONFIANCE BAND */
 .confiance-band{background:var(--w);border-bottom:1px solid var(--bd);padding:18px 16px}
 .confiance-inner{max-width:680px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .conf-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--dk)}
-.conf-check{width:22px;height:22px;border-radius:50%;background:var(--g);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
-
-/* HOW IT WORKS */
+.conf-check{width:22px;height:22px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .how-section{background:var(--lite);padding:32px 16px}
 .how-inner{max-width:680px;margin:0 auto}
-.how-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--dk);
-  text-align:center;margin-bottom:24px}
+.how-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--dk);text-align:center;margin-bottom:24px}
 .how-steps{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.how-step{background:var(--w);border:1.5px solid var(--bd);border-radius:14px;
-  padding:16px 14px;position:relative}
-.how-num{width:36px;height:36px;border-radius:50%;background:var(--g);color:#fff;
-  font-family:'Syne',sans-serif;font-weight:800;font-size:15px;
-  display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.how-step{background:var(--w);border:1.5px solid var(--bd);border-radius:14px;padding:16px 14px;position:relative}
+.how-num{width:36px;height:36px;border-radius:50%;background:var(--g);color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
 .how-step-title{font-size:13px;font-weight:700;color:var(--dk);margin-bottom:4px;line-height:1.3}
 .how-step-desc{font-size:12px;color:var(--mid);line-height:1.4}
-
-/* POSITIONING */
-.positioning-band{background:var(--lg);border-top:1.5px solid var(--bd);border-bottom:1.5px solid var(--bd);
-  padding:20px 16px;text-align:center}
+.positioning-band{background:var(--lg);border-top:1.5px solid var(--bd);border-bottom:1.5px solid var(--bd);padding:20px 16px;text-align:center}
 .positioning-text{max-width:600px;margin:0 auto;font-size:14px;color:var(--dk);line-height:1.7;font-weight:500}
-
-/* PRICE BAND */
 .price-band{background:var(--w);padding:20px 16px;border-bottom:1px solid var(--bd)}
-.price-band-inner{max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
-  background:var(--lo);border:1.5px solid rgba(224,123,0,.25);border-radius:14px;padding:16px 20px}
+.price-band-inner{max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;background:var(--lo);border:1.5px solid rgba(224,123,0,.25);border-radius:14px;padding:16px 20px}
 .price-band-left{font-size:14px;color:var(--dk);line-height:1.6}
 .price-band-left strong{display:block;font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--o);margin-bottom:2px}
 .price-band-right{font-size:12px;color:var(--mid);text-align:right;max-width:160px;line-height:1.5}
-
-/* PROOF SOCIALE */
-.proof-bar{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-  border-radius:10px;padding:10px 16px;margin-top:16px;display:inline-flex;
-  align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.8)}
-.proof-dot{width:8px;height:8px;border-radius:50%;background:#4ADE80;flex-shrink:0;
-  animation:pulse 2s infinite}
+.proof-bar{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 16px;margin-top:16px;display:inline-flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.8)}
+.proof-dot{width:8px;height:8px;border-radius:50%;background:#4ADE80;flex-shrink:0;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-/* HUMAN BLOC */
-.human-bar{background:var(--lo);border-left:4px solid var(--o);border-radius:10px;
-  padding:14px 18px;margin:0 16px 0;max-width:648px;margin-left:auto;margin-right:auto;
-  display:flex;align-items:flex-start;gap:12px;font-size:13px;color:var(--dk);line-height:1.6}
+.human-bar{background:var(--lo);border-left:4px solid var(--o);border-radius:10px;padding:14px 18px;margin:0 16px 0;max-width:648px;margin-left:auto;margin-right:auto;display:flex;align-items:flex-start;gap:12px;font-size:13px;color:var(--dk);line-height:1.6}
 .human-icon{font-size:24px;flex-shrink:0;margin-top:2px}
-
-/* WHAT KOYA DOESNT */
-.nodoes-section{background:var(--lr);border:1.5px solid rgba(192,57,43,.2);
-  border-radius:14px;padding:18px 20px;margin:0 16px 16px;max-width:648px;
-  margin-left:auto;margin-right:auto}
-.nodoes-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
-  color:var(--r);margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.nodoes-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;
-  color:var(--dk);margin-bottom:8px;line-height:1.5}
+.nodoes-section{background:var(--lr);border:1.5px solid rgba(192,57,43,.2);border-radius:14px;padding:18px 20px;margin:0 16px 16px;max-width:648px;margin-left:auto;margin-right:auto}
+.nodoes-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--r);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.nodoes-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--dk);margin-bottom:8px;line-height:1.5}
 .nodoes-item:last-child{margin-bottom:0}
 .nodoes-x{color:var(--r);font-weight:700;flex-shrink:0;margin-top:1px}
-
-/* FORM */
 .form-wrap{max-width:680px;margin:-20px auto 0;padding:0 16px 48px;position:relative;z-index:10}
 .card{background:var(--w);border-radius:20px;box-shadow:var(--sh);overflow:hidden}
-.card-header{background:var(--lg);border-bottom:1px solid var(--bd);padding:18px 24px;
-  display:flex;align-items:center;gap:12px}
-.card-hicon{width:40px;height:40px;background:var(--g);border-radius:10px;
-  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.card-header{background:var(--lg);border-bottom:1px solid var(--bd);padding:18px 24px;display:flex;align-items:center;gap:12px}
+.card-hicon{width:40px;height:40px;background:var(--g);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .card-header h2{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--g)}
 .card-header p{font-size:12px;color:var(--mid);margin-top:2px}
 .card-body{padding:24px}
-
-/* STEPS */
 .steps{display:flex;margin-bottom:24px;border-radius:10px;overflow:hidden;border:1px solid var(--bd)}
-.step{flex:1;padding:9px 5px;text-align:center;font-size:10px;font-weight:500;color:var(--mid);
-  background:var(--lite);border-right:1px solid var(--bd);display:flex;
-  align-items:center;justify-content:center;gap:3px;line-height:1.3}
+.step{flex:1;padding:9px 5px;text-align:center;font-size:10px;font-weight:500;color:var(--mid);background:var(--lite);border-right:1px solid var(--bd);display:flex;align-items:center;justify-content:center;gap:3px;line-height:1.3}
 .step:last-child{border-right:none}
 .step.active{background:var(--g);color:#fff;font-weight:700}
 .step.done{background:var(--lg);color:var(--g)}
-
-/* FIELDS */
 .field{margin-bottom:16px}
-.field label{display:block;font-size:13px;font-weight:600;color:var(--mid);
-  margin-bottom:5px;letter-spacing:.3px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--mid);margin-bottom:5px;letter-spacing:.3px}
 .field label span{color:var(--r)}
-.field input,.field select,.field textarea{width:100%;padding:0 14px;border:1.5px solid var(--bd);
-  border-radius:10px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--dk);
-  background:var(--w);outline:none;transition:border-color .2s,box-shadow .2s;appearance:none}
+.field input,.field select,.field textarea{width:100%;padding:0 14px;border:1.5px solid var(--bd);border-radius:10px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--dk);background:var(--w);outline:none;transition:border-color .2s,box-shadow .2s;appearance:none}
 .field input,.field select{height:48px}
 .field textarea{height:80px;padding:12px 14px;resize:none}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(26,92,56,.10)}
 .field input::placeholder,.field textarea::placeholder{color:#9BAAA0}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-
-/* PREF GRID */
 .pref-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
-.pref-opt{border:1.5px solid var(--bd);border-radius:10px;padding:10px 8px;
-  cursor:pointer;transition:all .2s;text-align:center;font-size:12px;font-weight:600;color:var(--mid)}
+.pref-opt{border:1.5px solid var(--bd);border-radius:10px;padding:10px 8px;cursor:pointer;transition:all .2s;text-align:center;font-size:12px;font-weight:600;color:var(--mid)}
 .pref-opt.sel{border-color:var(--g);background:var(--lg);color:var(--g)}
-
-/* URGENT TOGGLE */
-.urgent-toggle{display:flex;align-items:center;gap:12px;background:var(--lr);
-  border:1.5px solid rgba(192,57,43,.25);border-radius:10px;padding:12px 14px;
-  margin-bottom:16px;cursor:pointer;transition:all .2s}
+.urgent-toggle{display:flex;align-items:center;gap:12px;background:var(--lr);border:1.5px solid rgba(192,57,43,.25);border-radius:10px;padding:12px 14px;margin-bottom:16px;cursor:pointer;transition:all .2s}
 .urgent-toggle.active{background:#FFF0F0;border-color:var(--r)}
-.urgent-cb{width:20px;height:20px;border-radius:6px;border:2px solid var(--bd);
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.urgent-cb{width:20px;height:20px;border-radius:6px;border:2px solid var(--bd);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .urgent-toggle.active .urgent-cb{background:var(--r);border-color:var(--r)}
 .urgent-label{font-size:13px;font-weight:600;color:var(--dk)}
 .urgent-sub{font-size:11px;color:var(--mid);margin-top:2px}
-
-/* PRICE BOX */
-.price-box{background:var(--lg);border:1.5px solid var(--bd);border-radius:12px;
-  padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.price-box{background:var(--lg);border:1.5px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
 .price-left{font-size:13px;color:var(--mid);line-height:1.7}
 .price-right{text-align:right}
 .price-total{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;color:var(--g)}
 .price-detail{font-size:11px;color:var(--mid)}
-
-/* NOTICE */
-.notice{display:flex;align-items:flex-start;gap:8px;border-radius:10px;
-  padding:11px 14px;margin-bottom:14px;font-size:13px;color:var(--dk);line-height:1.5}
+.notice{display:flex;align-items:flex-start;gap:8px;border-radius:10px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:var(--dk);line-height:1.5}
 .notice.blue{background:var(--lg);border:1px solid rgba(26,92,56,.2)}
 .notice.orange{background:var(--lo);border:1px solid rgba(224,123,0,.2)}
 .notice.red{background:var(--lr);border:1px solid rgba(192,57,43,.2)}
 .notice-icon{flex-shrink:0;font-size:16px;margin-top:1px}
-
-/* PAYMENT */
-.payment-info{background:var(--lo);border:1.5px solid rgba(224,123,0,.3);
-  border-radius:12px;padding:16px;margin-bottom:16px}
-.payment-info-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;
-  color:var(--o);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.payment-info{background:var(--lo);border:1.5px solid rgba(224,123,0,.3);border-radius:12px;padding:16px;margin-bottom:16px}
+.payment-info-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--o);margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .payment-info-body{font-size:12px;color:var(--dk);line-height:1.8}
 .payment-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
-.pay-opt{border:2px solid var(--bd);border-radius:10px;padding:11px 12px;
-  cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:9px;
-  font-size:13px;font-weight:500;color:var(--dk)}
+.pay-opt{border:2px solid var(--bd);border-radius:10px;padding:11px 12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:500;color:var(--dk)}
 .pay-opt.sel{border-color:var(--g);background:var(--lg);color:var(--g)}
-.pay-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--bd);
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;transition:all .2s}
+.pay-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--bd);flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;transition:all .2s}
 .pay-opt.sel .pay-dot{border-color:var(--g);background:var(--g)}
-.pay-dot::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff;
-  position:absolute;opacity:0;transition:opacity .2s}
+.pay-dot::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff;position:absolute;opacity:0;transition:opacity .2s}
 .pay-opt.sel .pay-dot::after{opacity:1}
-
-/* BTNS */
-.btn{width:100%;height:52px;border:none;border-radius:12px;font-family:'Syne',sans-serif;
-  font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:8px}
+.btn{width:100%;height:52px;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn-g{background:var(--g);color:#fff;box-shadow:0 4px 16px rgba(26,92,56,.25)}
 .btn-g:hover{background:var(--g2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(26,92,56,.30)}
 .btn-g:active{transform:translateY(0)}
 .btn-g:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .btn-sec{background:transparent;color:var(--mid);border:1.5px solid var(--bd);margin-bottom:10px}
 .btn-sec:hover{background:var(--lite)}
-.btn-wa{background:var(--wa);color:#fff;box-shadow:0 4px 16px rgba(37,211,102,.30);
-  height:58px;font-size:16px}
+.btn-wa{background:var(--wa);color:#fff;box-shadow:0 4px 16px rgba(37,211,102,.30);height:58px;font-size:16px}
 .btn-wa:hover{background:#1EB85A;transform:translateY(-1px)}
-.wa-mandatory{font-size:12px;color:var(--r);font-weight:600;text-align:center;
-  margin-top:8px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:5px}
-
-/* CTA FINAL */
+.wa-mandatory{font-size:12px;color:var(--r);font-weight:600;text-align:center;margin-top:8px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:5px}
 .cta-final{max-width:680px;margin:0 auto 40px;padding:0 16px}
-.cta-final-btn{width:100%;height:60px;background:var(--g);color:#fff;border:none;
-  border-radius:14px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
-  box-shadow:0 6px 20px rgba(26,92,56,.30);transition:all .2s}
+.cta-final-btn{width:100%;height:60px;background:var(--g);color:#fff;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(26,92,56,.30);transition:all .2s}
 .cta-final-btn:hover{background:var(--g2);transform:translateY(-1px)}
-
-/* SUCCESS */
 .success-wrap{padding:32px 24px;text-align:center}
-.success-icon{width:76px;height:76px;background:var(--lg);border-radius:50%;
-  display:flex;align-items:center;justify-content:center;font-size:34px;
-  margin:0 auto 18px;border:3px solid var(--g)}
-.success-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;
-  color:var(--g);margin-bottom:8px}
+.success-icon{width:76px;height:76px;background:var(--lg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 18px;border:3px solid var(--g)}
+.success-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--g);margin-bottom:8px}
 .success-sub{font-size:14px;color:var(--mid);line-height:1.7;margin-bottom:20px}
 .demande-box{background:var(--dk);color:#fff;border-radius:12px;padding:18px;margin-bottom:18px}
-.demande-label{font-size:11px;color:rgba(255,255,255,.5);letter-spacing:2px;
-  text-transform:uppercase;margin-bottom:6px}
-.demande-code{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;
-  color:var(--o);letter-spacing:2px;word-break:break-all}
+.demande-label{font-size:11px;color:rgba(255,255,255,.5);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.demande-code{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--o);letter-spacing:2px;word-break:break-all}
 .demande-hint{font-size:11px;color:rgba(255,255,255,.4);margin-top:5px}
-
-/* VALIDATION STEPS */
-.val-steps{background:var(--lg);border:1.5px solid var(--bd);
-  border-radius:12px;padding:16px;margin-bottom:16px;text-align:left}
-.val-title{font-size:13px;font-weight:700;color:var(--g);
-  margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.val-steps{background:var(--lg);border:1.5px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px;text-align:left}
+.val-title{font-size:13px;font-weight:700;color:var(--g);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .val-step{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
 .val-step:last-child{margin-bottom:0}
-.val-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.val-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .vs-done{background:var(--g);color:#fff}
 .vs-wait{background:rgba(26,92,56,.15);color:var(--g)}
 .vs-next{background:rgba(224,123,0,.15);color:var(--o)}
 .val-text{font-size:12px;color:var(--dk);line-height:1.5;padding-top:4px}
 .val-text strong{display:block;font-weight:600;font-size:13px}
 .val-text span{color:var(--mid);font-size:11px}
-
-/* LINES */
 .lines-section{max-width:680px;margin:0 auto 40px;padding:0 16px}
-.section-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;
-  color:var(--dk);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--dk);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .lines-grid{display:flex;flex-direction:column;gap:8px}
-.line-card{background:var(--w);border:1.5px solid var(--bd);border-radius:14px;
-  padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
-  cursor:pointer;transition:all .2s;box-shadow:var(--sh2)}
+.line-card{background:var(--w);border:1.5px solid var(--bd);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .2s;box-shadow:var(--sh2)}
 .line-card:hover{border-color:var(--g);box-shadow:var(--sh);transform:translateY(-1px)}
-.line-route{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;
-  font-size:14px;font-weight:700;color:var(--dk)}
+.line-route{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--dk)}
 .line-arrow{color:var(--g);font-size:16px}
 .line-meta{font-size:11px;color:var(--mid);margin-top:2px}
-.line-price{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;
-  color:var(--g);text-align:right}
+.line-price{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--g);text-align:right}
 .line-price-sub{font-size:10px;color:var(--mid);font-family:'DM Sans',sans-serif;font-weight:400}
-
-/* ERR */
-.err{background:var(--lr);border:1px solid #E8B4B0;color:var(--r);
-  border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px}
-
-/* FOOTER */
-.footer{background:var(--dk);padding:28px 24px;text-align:center;
-  color:rgba(255,255,255,.5);font-size:13px}
+.err{background:var(--lr);border:1px solid #E8B4B0;color:var(--r);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.footer{background:var(--dk);padding:28px 24px;text-align:center;color:rgba(255,255,255,.5);font-size:13px}
 .footer strong{color:#fff;font-family:'Syne',sans-serif}
-
 @media(max-width:480px){
   .row{grid-template-columns:1fr}
   .payment-grid{grid-template-columns:1fr}
@@ -347,9 +262,10 @@ export default function KoyaMVP() {
     from:"",to:"",date:"",hour:"",seats:"1",
     name:"",phone:"",operator:"",besoin:"",pref:"",urgent:false
   });
-  const [err,  setErr]  = useState("");
+  const [err, setErr] = useState("");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sendingSheet, setSendingSheet] = useState(false);
 
   const line  = LINES.find(l => l.from === form.from && l.to === form.to);
   const seats = parseInt(form.seats) || 1;
@@ -403,19 +319,25 @@ export default function KoyaMVP() {
     document.getElementById("form-anchor")?.scrollIntoView({behavior:"smooth"});
   }
 
+  async function handleWhatsAppSubmit() {
+    if (sendingSheet) return;
+    setSendingSheet(true);
+    await saveToSheet(form, code, total);
+    setSendingSheet(false);
+    window.open(buildWA(form, code, total), "_blank");
+  }
+
   const STEP_LABELS = ["Trajet","Mes infos","Paiement","Demande"];
 
   return (
     <>
       <style>{css}</style>
 
-      {/* NAV */}
       <nav className="nav">
         <div className="logo">KOYA<span>.</span></div>
         <div className="badge">🚌 Côte d'Ivoire</div>
       </nav>
 
-      {/* HERO */}
       <div className="hero">
         <div className="hero-tag">🚌 Service de réservation</div>
         <h1>Réserve ta place<br/>sans te <em>déplacer</em></h1>
@@ -437,7 +359,6 @@ export default function KoyaMVP() {
         </div>
       </div>
 
-      {/* CONFIANCE BAND */}
       <div className="confiance-band">
         <div className="confiance-inner">
           {[
@@ -454,7 +375,6 @@ export default function KoyaMVP() {
         </div>
       </div>
 
-      {/* COMMENT ÇA MARCHE */}
       <div className="how-section">
         <div className="how-inner">
           <div className="how-title">Comment ça marche ?</div>
@@ -475,15 +395,13 @@ export default function KoyaMVP() {
         </div>
       </div>
 
-      {/* POSITIONNEMENT */}
       <div className="positioning-band">
         <p className="positioning-text">
-        Nous sélectionnons pour toi une compagnie fiable avec places disponibles.
-        Le nom de la compagnie et les informations utiles du voyage te sont communiqués après confirmation.
+          Nous sélectionnons pour toi une compagnie fiable avec places disponibles.
+          Le nom de la compagnie et les informations utiles du voyage te sont communiqués après confirmation.
         </p>
       </div>
 
-      {/* PRIX */}
       <div className="price-band">
         <div className="price-band-inner">
           <div className="price-band-left">
@@ -496,7 +414,6 @@ export default function KoyaMVP() {
         </div>
       </div>
 
-      {/* OPÉRATEUR HUMAIN */}
       <div style={{maxWidth:680,margin:"16px auto 0",padding:"0 16px"}}>
         <div className="human-bar">
           <div className="human-icon">👤</div>
@@ -508,26 +425,15 @@ export default function KoyaMVP() {
         </div>
       </div>
 
-      {/* CE QUE KOYA NE FAIT PAS */}
       <div style={{maxWidth:680,margin:"12px auto 0",padding:"0 16px"}}>
         <div className="nodoes-section">
           <div className="nodoes-title">❌ Ce que KOYA ne fait pas</div>
-          <div className="nodoes-item">
-            <div className="nodoes-x">✗</div>
-            <div>KOYA ne prend pas ton argent avant confirmation de ta place</div>
-          </div>
-          <div className="nodoes-item">
-            <div className="nodoes-x">✗</div>
-            <div>KOYA ne promet pas une place sans preuve du vendeur</div>
-          </div>
-          <div className="nodoes-item">
-            <div className="nodoes-x">✗</div>
-            <div>KOYA ne remplace pas la compagnie — KOYA sécurise ta réservation</div>
-          </div>
+          <div className="nodoes-item"><div className="nodoes-x">✗</div><div>KOYA ne prend pas ton argent avant confirmation de ta place</div></div>
+          <div className="nodoes-item"><div className="nodoes-x">✗</div><div>KOYA ne promet pas une place sans preuve du vendeur</div></div>
+          <div className="nodoes-item"><div className="nodoes-x">✗</div><div>KOYA ne remplace pas la compagnie — KOYA sécurise ta réservation</div></div>
         </div>
       </div>
 
-      {/* FORM */}
       <div className="form-wrap" id="form-anchor">
         <div className="card">
           <div className="card-header">
@@ -551,7 +457,6 @@ export default function KoyaMVP() {
           <div className="card-body">
             {err && <div className="err">⚠️ {err}</div>}
 
-            {/* STEP 1 */}
             {step === 1 && (
               <>
                 <div className="notice blue">
@@ -559,11 +464,8 @@ export default function KoyaMVP() {
                   <div>Tu envoies une <strong>demande</strong>. KOYA sélectionne une compagnie fiable et vérifie la disponibilité. Si confirmée — ta place est garantie ou remboursée.</div>
                 </div>
 
-                <div className={`urgent-toggle ${form.urgent?"active":""}`}
-                  onClick={() => set("urgent", !form.urgent)}>
-                  <div className="urgent-cb">
-                    {form.urgent && <span style={{color:"#fff",fontSize:13,fontWeight:800}}>✓</span>}
-                  </div>
+                <div className={`urgent-toggle ${form.urgent?"active":""}`} onClick={() => set("urgent", !form.urgent)}>
+                  <div className="urgent-cb">{form.urgent && <span style={{color:"#fff",fontSize:13,fontWeight:800}}>✓</span>}</div>
                   <div>
                     <div className="urgent-label">🚨 Je voyage aujourd'hui</div>
                     <div className="urgent-sub">Ta demande sera marquée URGENTE · Sous réserve de disponibilité immédiate.</div>
@@ -600,8 +502,7 @@ export default function KoyaMVP() {
                 <div className="row">
                   <div className="field">
                     <label>Date de voyage <span>*</span></label>
-                    <input type="date" min={today} value={form.date}
-                      onChange={e => set("date", e.target.value)} />
+                    <input type="date" min={today} value={form.date} onChange={e => set("date", e.target.value)} />
                   </div>
                   <div className="field">
                     <label>Heure souhaitée <span>*</span></label>
@@ -623,8 +524,7 @@ export default function KoyaMVP() {
                   <label>Préférence <span style={{fontWeight:400,color:"var(--mid)"}}>(optionnel)</span></label>
                   <div className="pref-grid">
                     {PREFS.map(p => (
-                      <div key={p} className={`pref-opt ${form.pref===p?"sel":""}`}
-                        onClick={() => set("pref", form.pref===p?"":p)}>
+                      <div key={p} className={`pref-opt ${form.pref===p?"sel":""}`} onClick={() => set("pref", form.pref===p?"":p)}>
                         {p}
                       </div>
                     ))}
@@ -635,25 +535,21 @@ export default function KoyaMVP() {
               </>
             )}
 
-            {/* STEP 2 */}
             {step === 2 && (
               <>
                 <div className="field">
                   <label>Nom complet <span>*</span></label>
-                  <input placeholder="Ex : Koné Aminata" value={form.name}
-                    onChange={e => set("name", e.target.value)} />
+                  <input placeholder="Ex : Koné Aminata" value={form.name} onChange={e => set("name", e.target.value)} />
                 </div>
+
                 <div className="field">
                   <label>Numéro WhatsApp <span style={{fontWeight:400,color:"var(--mid)"}}>(facultatif)</span></label>
-                  <input placeholder="+225 07 00 00 00 00" value={form.phone}
-                    onChange={e => set("phone", e.target.value)} />
+                  <input placeholder="+225 07 00 00 00 00" value={form.phone} onChange={e => set("phone", e.target.value)} />
                 </div>
+
                 <div className="field">
                   <label>Besoin particulier <span style={{fontWeight:400,color:"var(--mid)"}}>(facultatif)</span></label>
-                  <textarea
-                    placeholder="Ex : bagages volumineux, voyage avec enfant, personne âgée..."
-                    value={form.besoin}
-                    onChange={e => set("besoin", e.target.value)} />
+                  <textarea placeholder="Ex : bagages volumineux, voyage avec enfant, personne âgée..." value={form.besoin} onChange={e => set("besoin", e.target.value)} />
                 </div>
 
                 {line && (
@@ -682,7 +578,6 @@ export default function KoyaMVP() {
               </>
             )}
 
-            {/* STEP 3 */}
             {step === 3 && (
               <>
                 <div className="payment-info">
@@ -700,10 +595,10 @@ export default function KoyaMVP() {
                 <p style={{fontSize:13,fontWeight:600,color:"var(--mid)",marginBottom:8}}>
                   Ton opérateur Mobile Money préféré <span style={{color:"var(--r)"}}>*</span>
                 </p>
+
                 <div className="payment-grid">
                   {OPERATORS.map(op => (
-                    <div key={op} className={`pay-opt ${form.operator===op?"sel":""}`}
-                      onClick={() => set("operator", op)}>
+                    <div key={op} className={`pay-opt ${form.operator===op?"sel":""}`} onClick={() => set("operator", op)}>
                       <div className="pay-dot"></div>{op}
                     </div>
                   ))}
@@ -732,7 +627,6 @@ export default function KoyaMVP() {
               </>
             )}
 
-            {/* STEP 4 */}
             {step === 4 && (
               <div className="success-wrap">
                 <div className="success-icon">📨</div>
@@ -751,34 +645,10 @@ export default function KoyaMVP() {
 
                 <div className="val-steps">
                   <div className="val-title">⏳ Ce qui va se passer</div>
-                  <div className="val-step">
-                    <div className="val-num vs-done">✓</div>
-                    <div className="val-text">
-                      <strong>Demande préparée</strong>
-                      <span>{code}</span>
-                    </div>
-                  </div>
-                  <div className="val-step">
-                    <div className="val-num vs-wait">→</div>
-                    <div className="val-text">
-                      <strong>Tu envoies sur WhatsApp</strong>
-                      <span>Clique le bouton ci-dessous — étape obligatoire</span>
-                    </div>
-                  </div>
-                  <div className="val-step">
-                    <div className="val-num vs-wait">⏳</div>
-                    <div className="val-text">
-                      <strong>KOYA sélectionne une compagnie et vérifie ta place</strong>
-                      <span>Preuve de disponibilité obligatoire avant confirmation</span>
-                    </div>
-                  </div>
-                  <div className="val-step">
-                    <div className="val-num vs-next">→</div>
-                    <div className="val-text">
-                      <strong>Confirmation + paiement sur WhatsApp</strong>
-                      <span>Tu paies seulement après confirmation réelle</span>
-                    </div>
-                  </div>
+                  <div className="val-step"><div className="val-num vs-done">✓</div><div className="val-text"><strong>Demande préparée</strong><span>{code}</span></div></div>
+                  <div className="val-step"><div className="val-num vs-wait">→</div><div className="val-text"><strong>Tu envoies sur WhatsApp</strong><span>Clique le bouton ci-dessous — étape obligatoire</span></div></div>
+                  <div className="val-step"><div className="val-num vs-wait">⏳</div><div className="val-text"><strong>KOYA sélectionne une compagnie et vérifie ta place</strong><span>Preuve de disponibilité obligatoire avant confirmation</span></div></div>
+                  <div className="val-step"><div className="val-num vs-next">→</div><div className="val-text"><strong>Confirmation + paiement sur WhatsApp</strong><span>Tu paies seulement après confirmation réelle</span></div></div>
                 </div>
 
                 <div className="notice orange" style={{marginBottom:14}}>
@@ -786,12 +656,10 @@ export default function KoyaMVP() {
                   <div>Si ta place est <strong>confirmée par KOYA</strong>, elle est garantie ou remboursée. Zéro paiement avant cette étape.</div>
                 </div>
 
-                <a href={buildWA(form, code, total)} target="_blank" rel="noopener noreferrer"
-                  style={{display:"block",textDecoration:"none"}}>
-                  <button className="btn btn-wa">
-                    <span>💬</span> Envoyer ma demande sur WhatsApp maintenant
-                  </button>
-                </a>
+                <button className="btn btn-wa" onClick={handleWhatsAppSubmit} disabled={sendingSheet}>
+                  <span>💬</span> {sendingSheet ? "Enregistrement..." : "Envoyer ma demande sur WhatsApp maintenant"}
+                </button>
+
                 <div className="wa-mandatory">
                   ⚠️ Sans envoi WhatsApp, KOYA ne reçoit pas ta demande.
                 </div>
@@ -803,7 +671,6 @@ export default function KoyaMVP() {
         </div>
       </div>
 
-      {/* LIGNES */}
       <div className="lines-section">
         <div className="section-title">🗺️ Lignes disponibles</div>
         <div className="lines-grid">
@@ -817,21 +684,19 @@ export default function KoyaMVP() {
               </div>
               <div className="line-price">
                 {l.price.toLocaleString()} FCFA
-                <div className="line-price-sub">+ {KOYA_FEES.toLocaleString()} FCFA frais KOYA</div>
+                <div className="line-price-sub">+ {KOYA_FEES.toLocaleString()} FCFA service KOYA</div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* CTA FINAL */}
       <div className="cta-final">
         <button className="cta-final-btn" onClick={scrollToForm}>
           🚌 Réserver ma place maintenant
         </button>
       </div>
 
-      {/* FOOTER */}
       <footer className="footer">
         <div style={{marginBottom:6}}><strong>KOYA</strong> · Ton car. Ta place.</div>
         <div>© 2026 KOYA — Côte d'Ivoire</div>
