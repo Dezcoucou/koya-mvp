@@ -11,7 +11,6 @@ const LINES = [
   { from: "Yamoussoukro", to: "Abidjan", price: 3500, duration: "2h30" },
 ];
 
-const CITIES = ["Abidjan", "Bouaké", "Yamoussoukro", "San-Pédro", "Man", "Daloa"];
 const HOURS = ["06h00", "06h30", "07h00", "08h00", "09h00", "10h00", "12h00", "13h00", "14h00", "15h00"];
 const OPERATORS = ["Orange Money", "MTN Money", "Wave", "Moov Money"];
 const PREFS = ["Rapide", "Confort", "Économique"];
@@ -19,6 +18,13 @@ const PREFS = ["Rapide", "Confort", "Économique"];
 const KOYA_FEES = 1000;
 const KOYA_WA = "2250142299949";
 const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxbepaP2hrm7zOlbJcWnAdJzKT4wICASUs4sj5x8orc5iNcQTmmNB11eiBby2w4-_QV3g/exec";
+
+const DEPARTURES = [...new Set(LINES.map((l) => l.from))];
+
+function getDestinations(from) {
+  if (!from) return [];
+  return LINES.filter((l) => l.from === from).map((l) => l.to);
+}
 
 function genCode() {
   const now = new Date();
@@ -70,7 +76,6 @@ function buildWA(form, code, total) {
 
 function buildSheetUrl(form, code, total) {
   const params = new URLSearchParams();
-
   params.append("code", code);
   params.append("name", form.name);
   params.append("phone", formatTel(form.phone));
@@ -84,7 +89,6 @@ function buildSheetUrl(form, code, total) {
   params.append("pref", form.pref || "");
   params.append("besoin", form.besoin || "");
   params.append("urgent", form.urgent ? "OUI" : "NON");
-
   return `${SHEET_WEBHOOK_URL}?${params.toString()}`;
 }
 
@@ -154,6 +158,7 @@ export default function KoyaMVP() {
     pref: "",
     urgent: false,
   });
+
   const [err, setErr] = useState("");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -168,17 +173,23 @@ export default function KoyaMVP() {
     setErr("");
   }
 
+  function setDeparture(value) {
+    setForm((f) => ({ ...f, from: value, to: "" }));
+    setErr("");
+  }
+
   function validate() {
     if (step === 1) {
       if (!form.from) return "Choisis une ville de départ.";
       if (!form.to) return "Choisis une destination.";
-      if (form.from === form.to) return "Départ et destination doivent être différents.";
-      if (!line) return "Cette ligne n'est pas encore disponible.";
+      if (!line) return "Ce trajet n’est pas encore disponible.";
       if (!form.date) return "Choisis une date de voyage.";
       if (!form.hour) return "Choisis une heure souhaitée.";
     }
+
     if (step === 2 && !form.name.trim()) return "Entre ton nom complet.";
     if (step === 3 && !form.operator) return "Choisis ton opérateur Mobile Money.";
+
     return "";
   }
 
@@ -204,7 +215,19 @@ export default function KoyaMVP() {
 
   function reset() {
     setStep(1);
-    setForm({ from: "", to: "", date: "", hour: "", seats: "1", name: "", phone: "", operator: "", besoin: "", pref: "", urgent: false });
+    setForm({
+      from: "",
+      to: "",
+      date: "",
+      hour: "",
+      seats: "1",
+      name: "",
+      phone: "",
+      operator: "",
+      besoin: "",
+      pref: "",
+      urgent: false,
+    });
     setCode("");
     setErr("");
   }
@@ -214,8 +237,8 @@ export default function KoyaMVP() {
   }
 
   function pickLine(l) {
-    set("from", l.from);
     setForm((f) => ({ ...f, from: l.from, to: l.to }));
+    setErr("");
     setTimeout(scrollToForm, 80);
   }
 
@@ -325,17 +348,17 @@ export default function KoyaMVP() {
                 <div className="row">
                   <div className="field">
                     <label>Ville de départ *</label>
-                    <select value={form.from} onChange={(e) => set("from", e.target.value)}>
+                    <select value={form.from} onChange={(e) => setDeparture(e.target.value)}>
                       <option value="">Choisir...</option>
-                      {CITIES.map((c) => <option key={c}>{c}</option>)}
+                      {DEPARTURES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
 
                   <div className="field">
                     <label>Destination *</label>
-                    <select value={form.to} onChange={(e) => set("to", e.target.value)}>
-                      <option value="">Choisir...</option>
-                      {CITIES.filter((c) => c !== form.from).map((c) => <option key={c}>{c}</option>)}
+                    <select value={form.to} onChange={(e) => set("to", e.target.value)} disabled={!form.from}>
+                      <option value="">{form.from ? "Choisir..." : "Choisis d’abord le départ"}</option>
+                      {getDestinations(form.from).map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
@@ -357,7 +380,7 @@ export default function KoyaMVP() {
                     <label>Heure souhaitée *</label>
                     <select value={form.hour} onChange={(e) => set("hour", e.target.value)}>
                       <option value="">Choisir...</option>
-                      {HOURS.map((h) => <option key={h}>{h}</option>)}
+                      {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
                     </select>
                   </div>
                 </div>
