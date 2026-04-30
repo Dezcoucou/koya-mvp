@@ -38,9 +38,9 @@ function formatTel(tel) {
   let digits = tel.replace(/\D/g, "");
   if (digits.startsWith("00225")) digits = digits.slice(5);
   else if (digits.startsWith("225")) digits = digits.slice(3);
-  if (digits.length === 10) return "+225 " + digits.slice(0,2) + " " + digits.slice(2,4) + " " + digits.slice(4,6) + " " + digits.slice(6,8) + " " + digits.slice(8,10);
-  if (digits.length === 8)  return "+225 " + digits.slice(0,2) + " " + digits.slice(2,4) + " " + digits.slice(4,6) + " " + digits.slice(6,8);
-  return "+225 " + digits;
+  if (digits.length === 10) return "00225 " + digits.slice(0,2) + " " + digits.slice(2,4) + " " + digits.slice(4,6) + " " + digits.slice(6,8) + " " + digits.slice(8,10);
+  if (digits.length === 8)  return "00225 " + digits.slice(0,2) + " " + digits.slice(2,4) + " " + digits.slice(4,6) + " " + digits.slice(6,8);
+  return "00225 " + digits;
 }
 
 function buildWA(form, code, total) {
