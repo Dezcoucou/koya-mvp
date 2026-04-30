@@ -38,11 +38,9 @@ function formatTel(tel) {
   let digits = tel.replace(/\D/g, "");
   if (digits.startsWith("00225")) digits = digits.slice(5);
   if (digits.startsWith("225")) digits = digits.slice(3);
-
   if (digits.length === 10) {
     return "+225 " + digits.slice(0, 2) + " " + digits.slice(2, 4) + " " + digits.slice(4, 6) + " " + digits.slice(6, 8) + " " + digits.slice(8, 10);
   }
-
   return "+225 " + digits;
 }
 
@@ -89,6 +87,7 @@ function buildSheetUrl(form, code, total) {
   params.append("pref", form.pref || "");
   params.append("besoin", form.besoin || "");
   params.append("urgent", form.urgent ? "OUI" : "NON");
+
   return `${SHEET_WEBHOOK_URL}?${params.toString()}`;
 }
 
@@ -163,7 +162,10 @@ export default function KoyaMVP() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const line = LINES.find((l) => l.from === form.from && l.to === form.to);
+  const line = form.from && form.to
+    ? LINES.find((l) => l.from === form.from && l.to === form.to) || null
+    : null;
+
   const seats = parseInt(form.seats) || 1;
   const total = line ? (line.price + KOYA_FEES) * seats : 0;
   const today = new Date().toISOString().split("T")[0];
@@ -178,6 +180,11 @@ export default function KoyaMVP() {
     setErr("");
   }
 
+  function setDestination(value) {
+    setForm((f) => ({ ...f, to: value }));
+    setErr("");
+  }
+
   function validate() {
     if (step === 1) {
       if (!form.from) return "Choisis une ville de départ.";
@@ -186,10 +193,8 @@ export default function KoyaMVP() {
       if (!form.date) return "Choisis une date de voyage.";
       if (!form.hour) return "Choisis une heure souhaitée.";
     }
-
     if (step === 2 && !form.name.trim()) return "Entre ton nom complet.";
     if (step === 3 && !form.operator) return "Choisis ton opérateur Mobile Money.";
-
     return "";
   }
 
@@ -266,50 +271,6 @@ export default function KoyaMVP() {
         <div className="proof-bar"><div className="proof-dot" />Phase test · Abidjan ↔ Bouaké</div>
       </section>
 
-      <section className="section">
-        <div className="grid2">
-          {["Place vérifiée", "Départ confirmé", "Compagnie fiable sélectionnée", "Assistance KOYA jusqu’au départ"].map((item) => (
-            <div className="card-mini" key={item}><span className="check">✓</span>{item}</div>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="how-title">Comment ça marche ?</div>
-        <div className="grid2">
-          {[
-            ["1", "Tu fais ta demande", "Remplis le formulaire en 2 minutes."],
-            ["2", "KOYA vérifie", "Nous cherchons une place disponible."],
-            ["3", "Tu paies après confirmation", "Aucun paiement avant validation."],
-            ["4", "Tu voyages", "Tu reçois les informations utiles."],
-          ].map(([n, t, d]) => (
-            <div className="how-step" key={n}>
-              <div className="how-num">{n}</div>
-              <div className="how-step-title">{t}</div>
-              <div className="how-step-desc">{d}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <div className="band">KOYA sélectionne une compagnie fiable avec places disponibles. Les détails utiles sont communiqués après confirmation.</div>
-
-      <div className="price-band">
-        <div className="price-inner">
-          <div><strong>Service de réservation : 1 000 FCFA / place</strong><br />Prix du ticket selon la destination</div>
-          <div>Tu paies uniquement après confirmation.</div>
-        </div>
-      </div>
-
-      <div className="human"><strong>👤 Une vraie personne suit ta demande</strong><br />Ta demande est traitée par un opérateur KOYA, pas automatiquement par une machine.</div>
-
-      <div className="danger">
-        <strong>❌ Ce que KOYA ne fait pas</strong><br />
-        ✗ KOYA ne prend pas ton argent avant confirmation.<br />
-        ✗ KOYA ne promet pas une place sans vérification.<br />
-        ✗ KOYA ne remplace pas la compagnie : KOYA sécurise la réservation.
-      </div>
-
       <div className="form-wrap" id="form-anchor">
         <div className="form-card">
           <div className="form-header">
@@ -356,19 +317,19 @@ export default function KoyaMVP() {
 
                   <div className="field">
                     <label>Destination *</label>
-                    <select value={form.to} onChange={(e) => set("to", e.target.value)} disabled={!form.from}>
+                    <select value={form.to} onChange={(e) => setDestination(e.target.value)} disabled={!form.from}>
                       <option value="">{form.from ? "Choisir..." : "Choisis d’abord le départ"}</option>
                       {getDestinations(form.from).map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
 
-                {line && (
-                  <div className="price-box">
+                {line ? (
+                  <div className="price-box" key={`${line.from}-${line.to}`}>
                     <div>🚌 {line.from} → {line.to}<br />⏱ {line.duration}</div>
                     <div className="price-total">{line.price.toLocaleString()} FCFA</div>
                   </div>
-                )}
+                ) : null}
 
                 <div className="row">
                   <div className="field">
@@ -433,15 +394,6 @@ export default function KoyaMVP() {
 
             {step === 3 && (
               <>
-                <div className="payment-info">
-                  <div className="payment-info-title">💳 Paiement après confirmation</div>
-                  <div className="payment-info-body">
-                    1. Tu prépares ta demande<br />
-                    2. KOYA vérifie la disponibilité<br />
-                    3. Tu paies seulement après confirmation
-                  </div>
-                </div>
-
                 <div className="payment-grid">
                   {OPERATORS.map((op) => (
                     <div key={op} className={`pay ${form.operator === op ? "sel" : ""}`} onClick={() => set("operator", op)}>
@@ -450,8 +402,8 @@ export default function KoyaMVP() {
                   ))}
                 </div>
 
-                {line && (
-                  <div className="price-box">
+                {line ? (
+                  <div className="price-box" key={`${line.from}-${line.to}-summary`}>
                     <div>
                       <strong>{form.name}</strong><br />
                       {form.from} → {form.to}<br />
@@ -463,7 +415,7 @@ export default function KoyaMVP() {
                       <div className="price-detail">après confirmation</div>
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 <button className="btn btn-sec" onClick={() => setStep(2)}>← Retour</button>
                 <button className="btn btn-g" onClick={next} disabled={busy}>
@@ -515,10 +467,6 @@ export default function KoyaMVP() {
           </div>
         ))}
       </section>
-
-      <div className="cta-final">
-        <button className="cta-final-btn" onClick={scrollToForm}>🚌 Réserver ma place maintenant</button>
-      </div>
 
       <footer className="footer">
         <div><strong>KOYA</strong> · Ton car. Ta place.</div>
